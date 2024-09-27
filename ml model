@@ -1,0 +1,66 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.model_selection import RandomizedSearchCV
+geomagnetic_data = pd.read_csv("daily_geomagnetic_data.csv")
+solar_data = pd.read_csv("daily_solar_data.csv")
+geomagnetic_head = geomagnetic_data.head()
+solar_head = solar_data.head()
+print(geomagnetic_data.columns)
+print(geomagnetic_head)
+print(solar_data.columns)
+print(solar_head)
+geomagnetic_data['Date'] = pd.to_datetime(geomagnetic_data['Timestamp']).dt.date
+solar_data['Date'] = pd.to_datetime(solar_data['Date']).dt.date
+geomagnetic_data.drop(columns=['Timestamp'], inplace=True)
+merged_data = pd.merge(geomagnetic_data, solar_data, on='Date', how='inner')
+merged_data.head()
+replace_values = {'*': None, -1: None}
+merged_data.replace(replace_values, inplace=True)
+columns_to_numeric = ['Middle Latitude A', 'High Latitude A', 'Estimated A', 
+                      'Middle Latitude K', 'High Latitude K', 'Estimated K', 
+                      'Radio Flux 10.7cm', 'Sunspot Number', 'Sunspot Area (10^6 Hemis.)',
+                      'Flares: C', 'Flares: M', 'Flares: X', 'Flares: S', 
+                      'Flares: 1', 'Flares: 2', 'Flares: 3']
+for col in columns_to_numeric:
+    merged_data[col] = pd.to_numeric(merged_data[col], errors='coerce')
+cleaned_data = merged_data.dropna()
+features = ['Radio Flux 10.7cm', 'Sunspot Number', 'Sunspot Area (10^6 Hemis.)', 
+            'Flares: C', 'Flares: M', 'Flares: X', 'Middle Latitude A', 'High Latitude A', 'Estimated A']
+target = 'Estimated K'
+X = cleaned_data[features]
+y = cleaned_data[target]
+cleaned_data.head(), X.head(), y.head()
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Manual tuning example
+rf = RandomForestRegressor(n_estimators=200, max_depth=20, min_samples_split=5, random_state=42)
+rf.fit(X_train, y_train)
+# Make predictions on the test data
+y_pred = rf.predict(X_test)
+# Calculate Mean Squared Error
+mse = mean_squared_error(y_test, y_pred)
+print(f"Mean Squared Error: {mse}")
+
+# Calculate R-squared to measure the proportion of variance explained by the model
+r2 = r2_score(y_test, y_pred)
+print(f"R-squared: {r2}")
+# Get the feature importances
+importances = rf.feature_importances_
+
+feature_importance = pd.DataFrame({
+    'Feature': X_train.columns,
+    'Importance': importances
+}).sort_values(by='Importance', ascending=False)
+
+print(feature_importance)
+
+# Plot actual vs predicted values
+plt.scatter(y_test, y_pred)
+plt.xlabel("Actual Values")
+plt.ylabel("Predicted Values")
+plt.title("Actual vs Predicted Values")
+plt.show()
