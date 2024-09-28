@@ -127,7 +127,7 @@ This project successfully predicts the **Estimated K-Index**, a vital measure fo
 
 ## 👥 Contributors
 
-- **Samriddhi Bhalekar** - [GitHub Profile](https://github.com/your_username)
+- **Samriddhi Bhalekar** - [GitHub Profile](https://github.com/samriddhi244)
 
 ---
 
